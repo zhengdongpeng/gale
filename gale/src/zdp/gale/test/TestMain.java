@@ -12,11 +12,10 @@ public class TestMain {
 	public static void main(String[] args) {
 		TestMain tm=new TestMain();
 		ParseAnnotation<DatabaseSource> ps=((ParseAnnotation<DatabaseSource>)ParseAnnotation.getNewInstance());
-		ps.init( tm.getClass().getName());
+		ps.init(tm);
 		try {
 			ps.annotation(tm.db);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
 		System.out.println(tm.db.getPassword()+" : "+ tm.db.getUsername());
