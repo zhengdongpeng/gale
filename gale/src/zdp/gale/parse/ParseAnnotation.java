@@ -1,6 +1,8 @@
 package zdp.gale.parse;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
@@ -21,23 +23,36 @@ public class ParseAnnotation<T> {
 	
 	@SuppressWarnings("unused")
 	public static ParseAnnotation<?> getNewInstance(){
-		return newParseAnnotation.parse_;
+		ParseAnnotation obj=newParseAnnotation.parse_;
+		obj.init();
+		return obj;
 	}
 	
-	private static class newParseAnnotation{
-		private static final ParseAnnotation<?> parse_=new ParseAnnotation();
-	}
-	
-	public void annotation(T t) throws Exception{
-		FileInputStream fis=new FileInputStream("src/zdp.cfg.properties");
+	private void init() {
+		FileInputStream fis;
 		Properties pps = new Properties();
-		pps.load(fis);
+		try {
+			fis = new FileInputStream("src/zdp.cfg.properties");
+			pps.load(fis);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}catch (IOException e1) {
+			e1.printStackTrace();
+		}
 		Enumeration enu=pps.propertyNames();
 		while(enu.hasMoreElements())
 		{
 			String key=(String) enu.nextElement();
 			url.put(key, (String) pps.get(key));
 		}
+	}
+
+	private static class newParseAnnotation{
+		private static final ParseAnnotation<?> parse_=new ParseAnnotation();
+	}
+	
+	public void annotation(T t) throws Exception{
+		
 		this.parse(t);
 		}
 		
@@ -84,24 +99,26 @@ public class ParseAnnotation<T> {
 		return String.valueOf(cs);
 	}
 
-	public void init(String c) {
+	public void init(Object c) {
 		Class clz;
 		try {
-			clz = Class.forName(c);
-			Object obj=clz.newInstance();
+			clz= c.getClass();
 			Field [] field=clz.getDeclaredFields();
-			for(Field f : field){
+				for(Field f : field){
+					boolean isExist= f.isAnnotationPresent(GetObject.class);
+					if(isExist){
+						GetObject gb=(GetObject) f.getAnnotation(GetObject.class)	;
+					
+					f.setAccessible(true);
+					String str=url.get(gb.value());
+					if(str!=null || !"".equals(str)){
+						Class clz2=Class.forName(str);
+						f.set(c, clz2.newInstance());
+					}
+				}
 				
 			}
-			boolean isExist= clz.isAnnotationPresent(GetObject.class);
-			if(isExist){
-				GetObject gb=(GetObject) clz.getAnnotation(GetObject.class)	;
-				String str=url.get(gb.value());
-				if(str!=null || !"".equals(str)){
-					Class clz2=Class.forName(str);
-					
-				}
-			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
